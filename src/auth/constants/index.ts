@@ -1,1 +1,4 @@
-export * from './jwt_constants'
+require("dotenv")
+export const jwtConstants = {
+    secret: process.env.JWT_SECRET,
+};

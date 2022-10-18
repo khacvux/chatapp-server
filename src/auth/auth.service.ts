@@ -5,6 +5,7 @@ import * as argon from 'argon2';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { AuthPayload } from 'src/chat/gateway/types';
 
 @Injectable()
 export class AuthService {
@@ -24,6 +25,18 @@ export class AuthService {
     if (!pwMatches) throw new ForbiddenException('Credientials incorrect');
 
     return this.signToken(user.id, user.username);
+  }
+
+  async checkUser(payload:AuthPayload) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: payload.id
+      },
+    });
+    if (user.username!=payload.username) {
+      return false
+    }
+    return true
   }
 
   async signup(dto: AuthSignUp) {
@@ -52,7 +65,7 @@ export class AuthService {
     username: string,
   ): Promise<{ access_token: string }> {
     const payload = {
-      sub: userId,
+      id: userId,
       username: username,
     };
     const secret = this.config.get('SECRET_KEY');
