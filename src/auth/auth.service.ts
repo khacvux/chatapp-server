@@ -6,6 +6,7 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { AuthPayload } from 'src/chat/gateway/types';
+import { match } from 'assert';
 
 @Injectable()
 export class AuthService {
@@ -13,27 +14,27 @@ export class AuthService {
     private prisma: PrismaService,
     private jwt: JwtService,
     private config: ConfigService,
-  ) {}
+  ) { }
   async signin(dto: AuthSignIn) {
     const user = await this.prisma.user.findUnique({
       where: {
         username: dto.username,
       },
     });
-    if (!user) throw new ForbiddenException('Credientials incorrect');
-    const pwMatches = argon.verify(user.hash, dto.password);
-    if (!pwMatches) throw new ForbiddenException('Credientials incorrect');
-
-    return this.signToken(user.id, user.username);
+    if (!user) return {status: false,msg:"Incorrect Username or Password"}
+    const pwMatches = await argon.verify(user.hash, dto.password).catch(_ => { return false });
+    if (pwMatches) {
+      return this.signToken(user.id, user.username);
+    } else return {status: pwMatches,msg:"Incorrect Username or Password"}
   }
 
-  async checkUser(payload:AuthPayload) {
+  async checkUser(payload: AuthPayload) {
     const user = await this.prisma.user.findUnique({
       where: {
         id: payload.id
       },
     });
-    if (user.username!=payload.username) {
+    if (user.username != payload.username) {
       return false
     }
     return true
@@ -45,7 +46,7 @@ export class AuthService {
       const user = await this.prisma.user.create({
         data: {
           username: dto.username,
-          email:dto.email,
+          email: dto.email,
           hash,
         },
       });
@@ -63,7 +64,7 @@ export class AuthService {
   async signToken(
     userId: number,
     username: string,
-  ): Promise<{ access_token: string }> {
+  ): Promise<{ status: boolean, access_token: string,id: number,username: string, }> {
     const payload = {
       id: userId,
       username: username,
@@ -76,7 +77,10 @@ export class AuthService {
     });
 
     return {
+      status: true,
       access_token: token,
+      id: userId,
+      username:username
     };
   }
 }
