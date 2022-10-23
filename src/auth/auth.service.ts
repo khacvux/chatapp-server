@@ -1,12 +1,13 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuthSignIn, AuthSignUp } from './dto';
+import { AuthGetUser, AuthSignIn, AuthSignUp } from './dto';
 import * as argon from 'argon2';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { AuthPayload } from 'src/chat/gateway/types';
 import { match } from 'assert';
+import { jwtConstants } from './constants';
 
 @Injectable()
 export class AuthService {
@@ -21,11 +22,11 @@ export class AuthService {
         username: dto.username,
       },
     });
-    if (!user) return {status: false,msg:"Incorrect Username or Password"}
+    if (!user) return { status: false, msg: "Incorrect Username or Password" }
     const pwMatches = await argon.verify(user.hash, dto.password).catch(_ => { return false });
     if (pwMatches) {
       return this.signToken(user.id, user.username);
-    } else return {status: pwMatches,msg:"Incorrect Username or Password"}
+    } else return { status: pwMatches, msg: "Incorrect Username or Password" }
   }
 
   async checkUser(payload: AuthPayload) {
@@ -38,6 +39,49 @@ export class AuthService {
       return false
     }
     return true
+  }
+  async getUser(dto: AuthGetUser) {
+
+    try {
+      const JWT_SECRET = { secret: jwtConstants.secret }
+      var payload: any
+      try {
+        payload = this.jwt.verify(dto.token, JWT_SECRET);
+      } catch {
+        return { status: false, users: [] }
+      }
+      const user = await this.checkUser(payload)
+
+      if (user) {
+        const id = Number(payload.id)
+        const users = await this.prisma.user.findMany({
+          where: {
+            NOT: {
+              id: id
+            }
+          },
+          select: {
+            id: true,
+            username: true,
+            chat: {
+              take: 1,
+              orderBy: [
+                { id: 'desc' }
+              ],
+              where: {
+                OR: [
+                  { from: id},
+                  { to: id }
+                ]
+              }
+            }
+          }
+        });
+        return { status: true, users: users }
+      } else return { status: false, users: [] }
+    } catch {
+      return { status: false, users: [] }
+    }
   }
 
   async signup(dto: AuthSignUp) {
@@ -64,7 +108,7 @@ export class AuthService {
   async signToken(
     userId: number,
     username: string,
-  ): Promise<{ status: boolean, access_token: string,id: number,username: string, }> {
+  ): Promise<{ status: boolean, access_token: string, id: number, username: string, }> {
     const payload = {
       id: userId,
       username: username,
@@ -72,7 +116,7 @@ export class AuthService {
     const secret = this.config.get('SECRET_KEY');
 
     const token = await this.jwt.signAsync(payload, {
-      expiresIn: '7d',
+      expiresIn: '365d',
       secret,
     });
 
@@ -80,7 +124,7 @@ export class AuthService {
       status: true,
       access_token: token,
       id: userId,
-      username:username
+      username: username
     };
   }
 }

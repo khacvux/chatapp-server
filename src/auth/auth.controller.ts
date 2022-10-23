@@ -3,7 +3,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
 import { AuthService } from './auth.service';
 import { GetUser } from './decorator';
-import { AuthSignIn } from './dto';
+import { AuthGetUser, AuthSignIn } from './dto';
 import { AuthSignUp } from './dto';
 import { JwtGuard } from './guard';
 
@@ -15,6 +15,10 @@ export class AuthController {
   @Post('signin')
   signin(@Body() dto: AuthSignIn) {
     return this.authService.signin(dto);
+  }
+  @Post('getusers')
+  getUser(@Body() dto: AuthGetUser) {
+    return this.authService.getUser(dto);
   }
 
   @Post('signup')

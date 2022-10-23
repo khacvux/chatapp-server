@@ -35,10 +35,10 @@ export class GatewayGuard implements CanActivate {
             
             const user = await this.authService.checkUser(payload)
 
-            if (!user) throw new ForbiddenException('The token provided is not correct').message;
+            if (!user) socket.disconnect()
             return true;
         } catch {
-            throw new ForbiddenException('The token provided is not correct').message;
+            throw socket.disconnect()
         }
     }
 }
