@@ -62,25 +62,22 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
           msg: msg || '',
         },
       });
+
+      if (receiverSocketId) {
+        this.server.to(String(receiverSocketId)).emit('receiveMessage', {
+          title: 'New message',
+          from: socket.user.userId,
+          to: receiverId,
+          msg: msg || '',
+        });
+      }
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code == 'P2002') {
-          throw new ForbiddenException('Credientials taken');
+          throw new ForbiddenException('Credientials token');
         }
       }
       throw error;
     }
-
-    this.server.to(String(receiverSocketId)).emit('receiveMessage', {
-      title: 'New message',
-      from: socket.user.userId,
-      to: receiverId,
-      msg: msg || '',
-    });
-  }
-
-  @SubscribeMessage(`test`)
-  test() {
-    console.log('call');
   }
 }
