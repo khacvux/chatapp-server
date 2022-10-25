@@ -15,17 +15,31 @@ model User {
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
 
-  email String @unique
+  username String
   hash  String
 
+  email String @unique
+  
   firstName String?
   lastName  String?
+  chat      Chat[]
 
   @@map("users")
 }
 
-model chat {
-  id    Int    @id @default(autoincrement())
-  email String
-  text  String
+
+model Chat {
+  id        Int      @id @default(autoincrement())
+  msg       String 
+  from      Int
+  to        Int
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  user      User     @relation(fields: [from], references: [id])
+
+  @@map("chats")
+}
+
+model Session {
+  id        Int      @id @default(autoincrement())
+  json      String 
 }

@@ -32,7 +32,8 @@ export class AuthService {
       const user = await this.prisma.user.create({
         data: {
           email: dto.email,
-          hash,
+          username: dto.username,
+          hash
         },
       });
       return this.signToken(user.id, user.email);
@@ -48,11 +49,11 @@ export class AuthService {
 
   async signToken(
     userId: number,
-    email: string,
+    username: String,
   ): Promise<{ access_token: string }> {
     const payload = {
-      sub: userId,
-      email,
+      userId,
+      username,
     };
     const secret = this.config.get('JWT_SECRET');
 
