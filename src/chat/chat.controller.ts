@@ -1,15 +1,27 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { GetUser } from 'src/auth/decorator';
+import { JwtGuard } from 'src/auth/guard';
+import { Routes, User } from 'src/utils/constants';
 import { ChatService } from './chat.service';
-import { AuthGetChat} from './dto';
+import { GetChatDto } from './dto';
 
-@Controller('chat')
+
+@UseGuards(JwtGuard)
+@Controller(Routes.CHAT)
 export class ChatController {
-  constructor(private chatService: ChatService) {}
-  
+  constructor(private chatService: ChatService) { }
+
   @HttpCode(HttpStatus.OK)
 
-  @Post('getchats')
-  getUser(@Body() dto:AuthGetChat ) {
-    return this.chatService.getChat(dto);
+  @Post(Routes.GET_CHATS)
+  getUser(@Body() dto: GetChatDto, @GetUser(User.ID) userId: number) {
+    return this.chatService.getChat(dto, userId);
   }
 }

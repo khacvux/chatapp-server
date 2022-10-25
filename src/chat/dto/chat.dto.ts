@@ -1,12 +1,8 @@
 import { IsEmail, IsNotEmpty, IsNumber, IsString } from "class-validator";
 
 
-export class AuthGetChat {
-  @IsNotEmpty()
-  @IsString()
-  token: string;
-
+export class GetChatDto {
   @IsNotEmpty()
   @IsNumber()
-  to: number;
+  receiverId: number;
 }

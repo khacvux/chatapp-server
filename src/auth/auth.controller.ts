@@ -1,34 +1,28 @@
 import { Body, Controller, HttpCode, HttpStatus, Post, Get, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { Request } from 'express';
+import { Request, Router } from 'express';
+import { Routes, User } from 'src/utils/constants';
 import { AuthService } from './auth.service';
 import { GetUser } from './decorator';
-import { AuthGetUser, AuthSignIn } from './dto';
-import { AuthSignUp } from './dto';
-import { JwtGuard } from './guard';
+import { AuthGetUser, AuthSignIn,AuthSignUp } from './dto';
 
-@Controller('auth')
+@Controller(Routes.AUTH)
 export class AuthController {
   constructor(private authService: AuthService) {}
   
   @HttpCode(HttpStatus.OK)
-  @Post('signin')
+  @Post(Routes.SIGN_IN)
   signin(@Body() dto: AuthSignIn) {
     return this.authService.signin(dto);
   }
-  @Post('getusers')
-  getUser(@Body() dto: AuthGetUser) {
-    return this.authService.getUser(dto);
-  }
 
-  @Post('signup')
+  @Post(Routes.SIGN_UP)
   signup(@Body() dto: AuthSignUp) {
     return this.authService.signup(dto);
   }
 
-  // @Get('test')
-  // @UseGuards(JwtGuard)
-  // testApi(@GetUser() user) {
-  //      return user
-  // }
+  @Get(Routes.GET_USERS)
+  getUser(@GetUser(User.ID) userId: number) {
+    return this.authService.getUser(userId);
+  }
 }

@@ -1,124 +1,83 @@
+import { ForbiddenException, Inject } from '@nestjs/common';
 import {
-    MessageBody,
-    SubscribeMessage,
     WebSocketGateway,
     WebSocketServer,
+    SubscribeMessage,
+    MessageBody,
+    OnGatewayConnection,
+    ConnectedSocket,
+    OnGatewayDisconnect,
 } from '@nestjs/websockets';
-import { ForbiddenException, OnModuleInit, UseGuards } from '@nestjs/common';
 import { Server } from 'socket.io';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import { jwtConstants } from 'src/auth/constants';
-import { GatewayGuard } from '../guard';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { Services } from 'src/utils/constants';
+import { AuthenticatedSocket } from 'src/utils/interfaces';
+import { IGatewaySessionManager } from 'src/gateway/gateway.session';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
-var global = require('global');
-require('dotenv');
-@UseGuards(GatewayGuard)
-@WebSocketGateway({ cors: true })
-export class ChatGateway implements OnModuleInit {
+import { PrismaService } from 'src/prisma/prisma.service';
+
+@WebSocketGateway({
+    cors: true,
+    pingInterval: 10000,
+    pingTimeout: 15000,
+})
+export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     constructor(
-        private readonly jwtService: JwtService,
-        private config: ConfigService,
+        @Inject(Services.GATEWAY_SESSION_MANAGER)
+        readonly sessions: IGatewaySessionManager,
         private prisma: PrismaService
     ) { }
+
     @WebSocketServer()
     server: Server;
-    @UseGuards(GatewayGuard)
-    onModuleInit() {
-        global.onlineUsers = new Map();
-        this.server.on('connection', (socket) => {
-            const token =
-                socket.handshake.auth.access_token ||
-                socket.handshake.headers['access_token'];
-            if (token) {
-                const JWT_SECRET = { secret: jwtConstants.secret };
-                try {
-                    const payload = this.jwtService.verify(token, JWT_SECRET);
-                    if (payload) {
-                        const userID = Number(payload.id);
-                        if (userID) {
-                            global.onlineUsers.set(userID, socket.id);
-                            // console.log(userID + " Connected soketID =" + socket.id)
-                        } else {
-                            // console.log(" disconnect soketID =" + socket.id)
-                            socket.disconnect();
-                        }
-                    } else {
-                        // console.log(" disconnect soketID =" + socket.id)
-                        socket.disconnect();
-                    }
-                } catch {
-                    // console.log(" disconnect soketID =" + socket.id)
-                    socket.disconnect();
-                }
-            }
-        });
+
+    handleConnection(socket: AuthenticatedSocket, ...args: any[]) {
+        console.log(`${socket.user.username} Incoming Connection`);
+        this.sessions.setUserSocket(socket.user.id, socket);
     }
-    @UseGuards(GatewayGuard)
-    async handleDisconnect(client: any) {
-        try {
-            const token =
-                client.handshake?.auth?.access_token ||
-                client.handshake?.headers['access_token'];
-            const JWT_SECRET = { secret: jwtConstants.secret };
-            const payload = this.jwtService.verify(token, JWT_SECRET);
-            const userID = Number(payload.id);
-            if (userID) {
-                global.onlineUsers.delete(userID)
-            }
-        } catch { }
+
+    handleDisconnect(socket: AuthenticatedSocket) {
+        console.log(`${socket.user.username} disconnected.`);
+        this.sessions.removeUserSocket(socket.user.id);
     }
-    @UseGuards(GatewayGuard)
+
     @SubscribeMessage(`sendMessage`)
-    async onSendMessage(@MessageBody() body: any) {
+    async onSendMessage(
+        @MessageBody() body: any,
+        @ConnectedSocket() socket: AuthenticatedSocket,
+    ) {
+        const senderId = Number(socket.user.id);
+        const senderUsername = socket.user.username;
+        const receiverId = Number(body.to);
+        const msg = body.msg;
+        const receiverSocketId = this.sessions.getUserSocket(receiverId)?.user.socketId;
         try {
-            const token = body.access_token;
-            const JWT_SECRET = { secret: jwtConstants.secret };
-            const payload = this.jwtService.verify(token, JWT_SECRET);
-            const toUserID = Number(body.to);
-            const fromUserName = payload.username;
-            const fromUserID = Number(payload.id);
-            if (fromUserName) {
-                var socketID = global.onlineUsers.get(toUserID);
-                // console.log("sockeyID: "+socketID);
-                // console.log(global.onlineUsers.get(toUserID))
-                if (socketID) {
-                    this.server.to(socketID).emit(`reciveMessage`, {
-                        title: 'New message',
-                        from: fromUserID,
-                        to: toUserID,
-                        msg: body.msg || '',
-                    });
-                    // console.log(` ${fromUserID} send to : ${toUserID} msg: ${body.msg}`);
+            await this.prisma.chat.create({
+                data: {
+                    from: senderId,
+                    to: receiverId,
+                    msg: msg || ''
                 }
-                if (toUserID||toUserID==0) {
-                    try {
-                        await this.prisma.chat.create({
-                            data: {
-                                from: fromUserID,
-                                to: toUserID,
-                                msg: body.msg || ''
-                            }
-                        })
-                        .catch(e=>{console.log(e)})
-                        // .then(rs=>{console.log(rs)})
-                        // console.log(` ${fromUserID} send to : ${toUserID} msg: ${body.msg}`);
-                    } catch (error) {
-                        console.log(error)
-                        if (error instanceof PrismaClientKnownRequestError) {
-                            if (error.code == 'P2002') {
-                                throw new ForbiddenException('Credientials taken');
-                            }
-                        }
-                        throw error;
-                    }
-                    
+            })
+        } catch (error) {
+            if (error instanceof PrismaClientKnownRequestError) {
+                if (error.code == 'P2002') {
+                    throw new ForbiddenException('Credientials taken');
                 }
-                // else console.log(`touserid: '${toUserID}'`)
+            }
+            throw error;
+        }
+        try {
+            if (receiverSocketId) {
+                this.server.to(String(receiverSocketId)).emit('receiveMessage', {
+                    title: `New message from ${senderUsername}`,
+                    from: senderId,
+                    to: receiverId,
+                    msg: msg || '',
+                });
             }
         } catch (error) {
             console.log(error);
+            throw error;
         }
     }
 }

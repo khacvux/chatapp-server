@@ -3,7 +3,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { AppModule } from './../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 import * as pactum from 'pactum';
-import { AuthDto } from 'src/auth/dto';
+import { AuthSignIn } from 'src/auth/dto';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
@@ -31,8 +31,8 @@ describe('AppController (e2e)', () => {
   });
 
   describe('Auth', () => {
-    const dto: AuthDto = {
-      email: 'test13@gmail.com',
+    const dto: AuthSignIn = {
+      username: 'test13@gmail.com',
       password: '123123',
     };
     describe('Sign up', () => {
@@ -50,7 +50,7 @@ describe('AppController (e2e)', () => {
           .spec()
           .post('/auth/signup')
           .withBody({
-            email: dto.email,
+            username: dto.username,
           })
           .expectStatus(400);
       });
@@ -80,7 +80,7 @@ describe('AppController (e2e)', () => {
           .spec()
           .post('/auth/signin')
           .withBody({
-            email: dto.email,
+            username: dto.username,
           })
           .expectStatus(400);
       });
