@@ -36,20 +36,20 @@ export class ChatGateway implements OnModuleInit {
                 try {
                     const payload = this.jwtService.verify(token, JWT_SECRET);
                     if (payload) {
-                        const userID = payload.id;
+                        const userID = Number(payload.id);
                         if (userID) {
                             global.onlineUsers.set(userID, socket.id);
-                            console.log(userID + " Connected soketID =" + socket.id)
+                            // console.log(userID + " Connected soketID =" + socket.id)
                         } else {
-                            console.log(" disconnect soketID =" + socket.id)
+                            // console.log(" disconnect soketID =" + socket.id)
                             socket.disconnect();
                         }
                     } else {
-                        console.log(" disconnect soketID =" + socket.id)
+                        // console.log(" disconnect soketID =" + socket.id)
                         socket.disconnect();
                     }
                 } catch {
-                    console.log(" disconnect soketID =" + socket.id)
+                    // console.log(" disconnect soketID =" + socket.id)
                     socket.disconnect();
                 }
             }
@@ -63,7 +63,7 @@ export class ChatGateway implements OnModuleInit {
                 client.handshake?.headers['access_token'];
             const JWT_SECRET = { secret: jwtConstants.secret };
             const payload = this.jwtService.verify(token, JWT_SECRET);
-            const userID = payload.id;
+            const userID = Number(payload.id);
             if (userID) {
                 global.onlineUsers.delete(userID)
             }
@@ -81,31 +81,41 @@ export class ChatGateway implements OnModuleInit {
             const fromUserID = Number(payload.id);
             if (fromUserName) {
                 var socketID = global.onlineUsers.get(toUserID);
-
+                // console.log("sockeyID: "+socketID);
+                // console.log(global.onlineUsers.get(toUserID))
                 if (socketID) {
                     this.server.to(socketID).emit(`reciveMessage`, {
                         title: 'New message',
                         from: fromUserID,
-                        to: toUserID,    
+                        to: toUserID,
                         msg: body.msg || '',
                     });
+                    // console.log(` ${fromUserID} send to : ${toUserID} msg: ${body.msg}`);
                 }
-                try {
-                    await this.prisma.chat.create({
-                        data:{
-                            from: fromUserID,
-                            to:toUserID,
-                            msg:body.msg || ''
+                if (toUserID||toUserID==0) {
+                    try {
+                        await this.prisma.chat.create({
+                            data: {
+                                from: fromUserID,
+                                to: toUserID,
+                                msg: body.msg || ''
+                            }
+                        })
+                        .catch(e=>{console.log(e)})
+                        // .then(rs=>{console.log(rs)})
+                        // console.log(` ${fromUserID} send to : ${toUserID} msg: ${body.msg}`);
+                    } catch (error) {
+                        console.log(error)
+                        if (error instanceof PrismaClientKnownRequestError) {
+                            if (error.code == 'P2002') {
+                                throw new ForbiddenException('Credientials taken');
+                            }
                         }
-                    })
-                } catch (error) {
-                    if (error instanceof PrismaClientKnownRequestError) {
-                        if (error.code == 'P2002') {
-                          throw new ForbiddenException('Credientials taken');
-                        }
-                      }
-                    throw error;
+                        throw error;
+                    }
+                    
                 }
+                // else console.log(`touserid: '${toUserID}'`)
             }
         } catch (error) {
             console.log(error);
