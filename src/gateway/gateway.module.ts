@@ -1,27 +1,27 @@
 import { Module } from '@nestjs/common';
 import { Services } from '../utils/constants';
-import { Gateway } from './gateway';
+import { ChatGateway } from 'src/chat/gateway/chat.gateway';
 import { WebsocketAdapter } from './gateway.adapter';
 import { GatewaySessionManager } from './gateway.session';
 import { JwtService } from '@nestjs/jwt';
 
 @Module({
-  imports: [WebsocketAdapter],
-  providers: [
-    Gateway,
-    JwtService,
-    {
-      provide: Services.GATEWAY_SESSION_MANAGER,
-      useClass: GatewaySessionManager,
-    },
-  ],
-  exports: [
-    Gateway,
-    {
-      provide: Services.GATEWAY_SESSION_MANAGER,
-      useClass: GatewaySessionManager,
-    },
-  ],
-  
+	imports: [WebsocketAdapter],
+	providers: [
+		ChatGateway,
+		JwtService,
+		{
+			provide: Services.GATEWAY_SESSION_MANAGER,
+			useClass: GatewaySessionManager,
+		},
+	],
+	exports: [
+		ChatGateway,
+		{
+			provide: Services.GATEWAY_SESSION_MANAGER,
+			useClass: GatewaySessionManager,
+		},
+	],
+
 })
-export class GatewayModule {}
+export class GatewayModule { }

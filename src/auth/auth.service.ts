@@ -1,69 +1,100 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuthDto } from './dto';
+import { AuthSignIn, AuthSignUp } from './dto';
 import * as argon from 'argon2';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-
+import { Secret, Token } from 'src/utils/constants';
 @Injectable()
 export class AuthService {
-  constructor(
-    private prisma: PrismaService,
-    private jwt: JwtService,
-    private config: ConfigService,
-  ) {}
-  async signin(dto: AuthDto) {
-    const user = await this.prisma.user.findUnique({
-      where: {
-        email: dto.email,
-      },
-    });
-    if (!user) throw new ForbiddenException('Credientials incorrect');
-    const pwMatches = argon.verify(user.hash, dto.password);
-    if (!pwMatches) throw new ForbiddenException('Credientials incorrect');
+	constructor(
+		private prisma: PrismaService,
+		private jwt: JwtService,
+		private config: ConfigService,
+	) { }
 
-    return this.signToken(user.id, user.email);
-  }
+	async signin(dto: AuthSignIn) {
+		const user = await this.prisma.user.findUnique({
+			where: {
+				username: dto.username,
+			},
+		});
+		if (!user) return { status: false, msg: "Incorrect Username or Password" }
+		const pwMatches = await argon.verify(user.hash, dto.password).catch(_ => { return false });
+		if (pwMatches) {
+			return this.signToken(user.id, user.username);
+		} else return { status: pwMatches, msg: "Incorrect Username or Password" }
+	}
 
-  async signup(dto: AuthDto) {
-    const hash = await argon.hash(dto.password);
-    try {
-      const user = await this.prisma.user.create({
-        data: {
-          email: dto.email,
-          username: dto.username,
-          hash
-        },
-      });
-      return this.signToken(user.id, user.email);
-    } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError) {
-        if (error.code == 'P2002') {
-          throw new ForbiddenException('Credientials taken');
-        }
-      }
-      throw error;
-    }
-  }
+	async getUser(userId: number) {
+		const users = await this.prisma.user.findMany({
+			where: {
+				NOT: {
+					id: userId
+				}
+			},
+			select: {
+				id: true,
+				username: true,
+				chat: {
+					take: 1,
+					orderBy: [
+						{ id: 'desc' }
+					],
+					where: {
+						OR: [
+							{ from: userId },
+							{ to: userId }
+						]
+					}
+				}
+			}
+		});
+		return { status: true, users: users }
+	}
 
-  async signToken(
-    userId: number,
-    username: String,
-  ): Promise<{ access_token: string }> {
-    const payload = {
-      userId,
-      username,
-    };
-    const secret = this.config.get('JWT_SECRET');
+	async signup(dto: AuthSignUp) {
+		const hash = await argon.hash(dto.password);
+		try {
+			const user = await this.prisma.user.create({
+				data: {
+					username: dto.username,
+					email: dto.email,
+					hash,
+				},
+			});
+			return this.signToken(user.id, user.username);
+		} catch (error) {
+			if (error instanceof PrismaClientKnownRequestError) {
+				if (error.code == 'P2002') {
+					throw new ForbiddenException('Credientials taken');
+				}
+			}
+			throw error;
+		}
+	}
 
-    const token = await this.jwt.signAsync(payload, {
-      expiresIn: '7d',
-      secret,
-    });
+	async signToken(
+		userId: number,
+		username: string,
+	): Promise<{ status: boolean, access_token: string, id: number, username: string, }> {
+		const payload = {
+			id: userId,
+			username: username,
+		};
+		const secret = this.config.get(Secret.JWT_SECRET);
 
-    return {
-      access_token: token,
-    };
-  }
+		const token = await this.jwt.signAsync(payload, {
+			expiresIn: Token.EXPIRES_IN,
+			secret,
+		});
+
+		return {
+			status: true,
+			access_token: token,
+			id: userId,
+			username: username
+		};
+	}
 }

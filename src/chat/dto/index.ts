@@ -1,1 +1,1 @@
-export * from './get-chat.dto'
+export * from './chat.dto'

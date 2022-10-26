@@ -11,30 +11,27 @@ datasource db {
 }
 
 model User {
-  id       Int      @id @default(autoincrement())
-  createAt DateTime @default(now())
-  updateAt DateTime @updatedAt
+  id Int @id @default(autoincrement())
+  username String @unique
+  hash     String
 
-  username String
-  hash  String
-
-  email String @unique
-  
+  email     String   @unique
   firstName String?
   lastName  String?
+  createAt  DateTime @default(now())
+  updateAt  DateTime @updatedAt
   chat      Chat[]
 
   @@map("users")
 }
 
-
 model Chat {
   id        Int      @id @default(autoincrement())
-  msg       String 
+  msg       String   @db.VarChar(255)
   from      Int
   to        Int
   createdAt DateTime @default(now()) @db.Timestamp(6)
-  user      User     @relation(fields: [from], references: [id])
+  user      User     @relation( fields: [from], references: [id])
 
   @@map("chats")
 }

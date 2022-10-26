@@ -1,8 +1,12 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
-import { Request } from 'express';
+import { Body, Controller, HttpCode, HttpStatus, Post, Get, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { Request, Router } from 'express';
+import { Routes, User } from 'src/utils/constants';
 import { AuthService } from './auth.service';
-import { AuthDto } from './dto';
-import { Routes } from '../utils/constants';
+import { GetUser } from './decorator';
+import { AuthGetUser, AuthSignIn,AuthSignUp } from './dto';
+import { JwtGuard } from './guard';
+
 
 @Controller(Routes.AUTH)
 export class AuthController {
@@ -10,12 +14,18 @@ export class AuthController {
   
   @HttpCode(HttpStatus.OK)
   @Post(Routes.SIGN_IN)
-  signin(@Body() dto: AuthDto) {
+  signin(@Body() dto: AuthSignIn) {
     return this.authService.signin(dto);
   }
-
+  
   @Post(Routes.SIGN_UP)
-  signup(@Body() dto: AuthDto) {
+  signup(@Body() dto: AuthSignUp) {
     return this.authService.signup(dto);
+  }
+
+  @UseGuards(JwtGuard)
+  @Get(Routes.GET_USERS)
+  getUser(@GetUser(User.ID) userId: number) {
+    return this.authService.getUser(userId);
   }
 }
