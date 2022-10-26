@@ -10,6 +10,9 @@ export class ChatService {
     async getChat(dto: GetChatDto, userId: number) {
         try {
             const chats = (await this.prisma.chat.findMany({
+                orderBy:{
+                    id: 'asc'
+                },
                 where: {
                     OR: [
                         {

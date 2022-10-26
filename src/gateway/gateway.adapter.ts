@@ -12,7 +12,7 @@ export class WebsocketAdapter extends IoAdapter {
 		const server = super.createIOServer(port, options);
 		server.use(async (socket: AuthenticatedSocket, next) => {
 			const token = socket.handshake.headers?.access_token;
-
+			// console.log(socket)
 			if (!token) {
 				console.log(`Client has no token`);
 				return next(new Error('Not Authenticated. No token were sent'));
