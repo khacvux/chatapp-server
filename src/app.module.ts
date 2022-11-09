@@ -4,6 +4,8 @@ import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ChatModule } from './chat/chat.module';
 import { GatewayModule } from './gateway/gateway.module';
+import { FriendsModule } from './friends/friends.module';
+import { FriendRequestModule } from './friend-request/friend-request.module';
 
 
 @Module({
@@ -14,7 +16,9 @@ import { GatewayModule } from './gateway/gateway.module';
     PrismaModule,
     AuthModule,
     ChatModule,
-    GatewayModule
+    GatewayModule,
+    FriendsModule,
+    FriendRequestModule,
   ],
 })
 export class AppModule {}

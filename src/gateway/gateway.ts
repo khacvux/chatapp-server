@@ -65,7 +65,6 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       if (receiverSocketId) {
         this.server.to(String(receiverSocketId)).emit('receiveMessage', {
-          title: 'New message',
           from: socket.user.userId,
           to: receiverId,
           msg: msg || '',

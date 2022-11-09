@@ -6,4 +6,3 @@ export class GetChatDto {
     @IsNumber()
     receiverId: number;
   }
-  
