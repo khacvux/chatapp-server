@@ -19,10 +19,10 @@ export class AuthService {
         username: dto.username,
       },
     });
-    if (!user) throw new ForbiddenException('Credientials incorrect');
-    const pwMatches = argon.verify(user.hash, dto.password);
-    if (!pwMatches) throw new ForbiddenException('Credientials incorrect');
-
+    if (!user) throw new ForbiddenException('Credentials incorrect');
+    const pwMatches = await argon.verify(user.hash, dto.password);
+    if (!pwMatches) throw new ForbiddenException('Credentials incorrect');
+    
     return this.signToken(user.id, user.email);
   }
 
@@ -40,7 +40,7 @@ export class AuthService {
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code == 'P2002') {
-          throw new ForbiddenException('Credientials taken');
+          throw new ForbiddenException('Credentials taken');
         }
       }
       throw error;

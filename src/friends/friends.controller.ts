@@ -14,11 +14,11 @@ import { FriendService } from './friends.service';
 @UseGuards(JwtGuard)
 @Controller(Routes.FRIENDS)
 export class FriendsController {
-  constructor(private friendService: FriendService) {}
+  constructor(private service: FriendService) {}
 
   @Get()
   getFriends(@GetUser('userId') userId: number) {
-    return this.friendService.getFriends(userId);
+    return this.service.getFriends(userId);
   }
 
   @Delete(Routes.DELETE_FRIEND)
@@ -26,6 +26,6 @@ export class FriendsController {
     @GetUser('userId') userId: number,
     @Param('id', ParseIntPipe) id: number,
   ) {
-    return this.friendService.deleteFriend(userId, id);
+    return this.service.delete(userId, id);
   }
 }

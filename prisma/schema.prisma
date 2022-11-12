@@ -16,21 +16,23 @@ model User {
   updateAt DateTime @updatedAt
 
   username String @unique
-  hash  String 
+  hash     String
 
   email String @unique
-  
+
   firstName String?
   lastName  String?
-  chat      Chat[]
+
+  chat          Chat[]
+  friend        Friend[]
+  friendRequest FriendRequest[]
 
   @@map("users")
 }
 
-
 model Chat {
   id        Int      @id @default(autoincrement())
-  msg       String 
+  msg       String
   from      Int
   to        Int
   createdAt DateTime @default(now()) @db.Timestamp(6)
@@ -39,7 +41,26 @@ model Chat {
   @@map("chats")
 }
 
-model Session {
-  id        Int      @id @default(autoincrement())
-  json      String 
+model Friend {
+  id       Int      @default(autoincrement())
+  userId   Int
+  friendId Int
+  createAt DateTime @default(now()) @db.Timestamp(6)
+  User     User?    @relation(fields: [userId], references: [id])
+
+  @@id([userId, friendId])
+  @@map("friends")
+}
+
+model FriendRequest {
+  id         Int      @default(autoincrement())
+  senderId   Int
+  receiverId Int
+  createAt   DateTime @default(now()) @db.Timestamp(6)
+  status     Int
+
+  User User? @relation(fields: [receiverId], references: [id])
+
+  @@id([senderId, receiverId])
+  @@map("friend_requests")
 }

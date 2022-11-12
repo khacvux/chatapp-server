@@ -5,7 +5,22 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class FriendService {
   constructor(private prisma: PrismaService) {}
 
-  async getFriends(userId: number) {}
+  async getFriends(userId: number) {
+    return this.prisma.friend.findMany({
+      where: {
+        userId: userId,
+      },
+    });
+  }
 
-  async deleteFriend(userId: number, id: number) {}
+  async delete(userId: number, id: number) {
+    return await this.prisma.friend.delete({
+      where: {
+        userId_friendId: {
+          userId: userId,
+          friendId: id,
+        },
+      },
+    });
+  }
 }

@@ -14,10 +14,11 @@ export enum Routes {
     DELETE_FRIEND = ':id/delete',
 
     // FRIEND REQUEST
-    FRIENDS_REQUEST = 'f-req',
+    FRIENDS_REQUEST = 'freq',
+    CREATE_FRIENDS_REQUEST = ':id/create',
     ACCEPT_FRIENDS_REQUEST = ':id/accept',
     CANCEL_FRIENDS_REQUEST = ':id/cancel',
-    REFUSE_FRIENDS_REQUEST = ':id/refuse',
+    REJECT_FRIENDS_REQUEST = ':id/reject',
 
 }
 

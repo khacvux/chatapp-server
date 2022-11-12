@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseIntPipe,
   Patch,
@@ -18,32 +20,44 @@ import { CreateFriendReq } from './dtos';
 @UseGuards(JwtGuard)
 @Controller(Routes.FRIENDS_REQUEST)
 export class FriendRequestController {
-  constructor(private friendRequestService: FriendRequestService) {}
+  constructor(private service: FriendRequestService) {}
 
   @Get()
-  getFriendRequests(@GetUser('userId') userId: number) {}
+  getFriendRequests(@GetUser('id') userId: number) {
+    return this.service.getFriendRequests(userId);
+  }
 
-  @Post()
-  async createFriendRequest(
-    @GetUser('userId') userId: number,
-    @Body() username: CreateFriendReq,
-  ) {}
+  @HttpCode(HttpStatus.CREATED)
+  @Patch(Routes.CREATE_FRIENDS_REQUEST)
+  createFriendRequest(
+    @GetUser('id') senderId: number,
+    @Param('id', ParseIntPipe) receiverId: number,
+  ) {
+    return this.service.create(senderId, receiverId);
+  }
 
+  @HttpCode(HttpStatus.ACCEPTED)
   @Patch(Routes.ACCEPT_FRIENDS_REQUEST)
   async acceptFriendRequest(
-    @GetUser('userId') userId: number,
+    @GetUser('id') userId: number,
     @Param('id', ParseIntPipe) id: number,
-  ) {}
+  ) {
+    return this.service.accept(userId, id);
+  }
 
-  @Delete(Routes.CANCEL_FRIENDS_REQUEST)
-  async refuseFriendRequest(
-    @GetUser('userId') userId: number,
+  @Delete(Routes.REJECT_FRIENDS_REQUEST)
+  async rejectFriendRequest(
+    @GetUser('id') userId: number,
     @Param('id', ParseIntPipe) id: number,
-  ) {}
+  ) {
+    return this.service.reject(userId, id);
+  }
 
   @Patch(Routes.CANCEL_FRIENDS_REQUEST)
   async cancelFriendRequest(
-    @GetUser('userId') userId: number,
+    @GetUser('id') userId: number,
     @Param('id', ParseIntPipe) id: number,
-  ) {}
+  ) {
+    return this.service.cancel(userId, id);
+  }
 }
