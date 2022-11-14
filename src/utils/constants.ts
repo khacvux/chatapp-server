@@ -12,6 +12,7 @@ export enum Routes {
     FRIENDS = 'f',
     ADD_FRIEND = 'add',
     DELETE_FRIEND = ':id/delete',
+    SEARCH_FRIEND = 'search/:querry',
 
     // FRIEND REQUEST
     FRIENDS_REQUEST = 'freq',

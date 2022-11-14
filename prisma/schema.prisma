@@ -2,7 +2,8 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch", "fullTextIndex"]
 }
 
 datasource db {
@@ -18,14 +19,14 @@ model User {
   username String @unique
   hash     String
 
-  email String @unique
-
+  email     String  @unique
+  avatar    String?
   firstName String?
   lastName  String?
 
-  chat          Chat[]
-  friend        Friend[]
-  friendRequest FriendRequest[]
+  chat    Chat[]
+  UserOne Friend[] @relation("userone")
+  UserTwo Friend[] @relation("usertwo")
 
   @@map("users")
 }
@@ -42,25 +43,20 @@ model Chat {
 }
 
 model Friend {
-  id       Int      @default(autoincrement())
-  userId   Int
-  friendId Int
-  createAt DateTime @default(now()) @db.Timestamp(6)
-  User     User?    @relation(fields: [userId], references: [id])
+  id        Int      @default(autoincrement())
+  userOneId Int
+  userTwoId Int
+  createAt  DateTime @default(now()) @db.Timestamp(6)
 
-  @@id([userId, friendId])
+  //STATUS
+  // 0 || NULL: DEFAULT - CANCEL - DELETE - PENDING
+  // 1: PENDING
+  // 2: ACCEPT
+  status Int
+
+  UserOne User @relation("userone", fields: [userOneId], references: [id], map: "userone_fkey")
+  UserTwo User @relation("usertwo", fields: [userTwoId], references: [id], map: "usertwo_fkey")
+
+  @@id([userOneId, userTwoId])
   @@map("friends")
-}
-
-model FriendRequest {
-  id         Int      @default(autoincrement())
-  senderId   Int
-  receiverId Int
-  createAt   DateTime @default(now()) @db.Timestamp(6)
-  status     Int
-
-  User User? @relation(fields: [receiverId], references: [id])
-
-  @@id([senderId, receiverId])
-  @@map("friend_requests")
 }

@@ -55,7 +55,7 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.sessions.getUserSocket(receiverId)?.user.socketId;
 
     try {
-      await this.prisma.chat.create({
+      const message = await this.prisma.chat.create({
         data: {
           from: socket.user.userId,
           to: receiverId,
@@ -65,9 +65,7 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       if (receiverSocketId) {
         this.server.to(String(receiverSocketId)).emit('receiveMessage', {
-          from: socket.user.userId,
-          to: receiverId,
-          msg: msg || '',
+          message,
         });
       }
     } catch (error) {
@@ -79,4 +77,7 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
       throw error;
     }
   }
+
+  // @SubscribeMessage('')
+
 }

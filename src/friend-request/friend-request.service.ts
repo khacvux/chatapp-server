@@ -3,6 +3,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import {
   FriendRequestAcceptedException,
   FriendRequestException,
+  FriendRequestNotFoundException,
 } from './exceptions';
 
 @Injectable()
@@ -10,10 +11,31 @@ export class FriendRequestService {
   constructor(private prisma: PrismaService) {}
 
   async getFriendRequests(userId: number) {
-    return await this.prisma.friendRequest.findMany({
+    const list = await this.prisma.friend.findMany({
       where: {
-        receiverId: userId,
+        OR: [
+          {
+            AND: [{ userOneId: userId }, { status: 2 }],
+          },
+          {
+            AND: [{ userTwoId: userId }, { status: 2 }],
+          },
+        ],
       },
+    });
+
+    return list.map((item) => {
+      if (item.userOneId == userId) {
+        item['userId'] = item.userTwoId;
+        delete item.userOneId;
+        delete item.userTwoId;
+        return item;
+      } else {
+        item['userId'] = item.userOneId;
+        delete item.userOneId;
+        delete item.userTwoId;
+        return item;
+      }
     });
   }
 
@@ -26,22 +48,11 @@ export class FriendRequestService {
     const isFriend = await this.isFriend(senderId, receiverId);
     if (isFriend.length) throw new FriendRequestException('');
 
-    const existRequest = await this.prisma.friendRequest.findUnique({
-      where: {
-        senderId_receiverId: {
-          senderId: senderId,
-          receiverId: receiverId,
-        },
-      },
-    });
-
-    if (existRequest) throw new FriendRequestException('friend_request exist');
-
-    const added = await this.prisma.friendRequest.create({
+    const added = await this.prisma.friend.create({
       data: {
-        senderId: senderId,
-        receiverId: receiverId,
-        status: 0,
+        userOneId: senderId,
+        userTwoId: receiverId,
+        status: 1,
       },
     });
     if (!added) throw new FriendRequestException('friend_request exist');
@@ -55,46 +66,47 @@ export class FriendRequestService {
       );
     const isFriend = await this.isFriend(userId, id);
     if (isFriend.length) throw new FriendRequestAcceptedException();
-
-    const deleted = await this.prisma.friendRequest.delete({
+    return await this.prisma.friend.update({
       where: {
-        senderId_receiverId: {
-          senderId: id,
-          receiverId: userId,
+        userOneId_userTwoId: {
+          userOneId: id,
+          userTwoId: userId,
         },
       },
-    });
-
-    if (!deleted) throw new FriendRequestAcceptedException();
-
-    return await this.prisma.friend.create({
       data: {
-        userId: userId,
-        friendId: id,
+        status: 2,
       },
     });
   }
 
   async reject(userId: number, id: number) {
-    return await this.prisma.friendRequest.delete({
-      where: {
-        senderId_receiverId: {
-          senderId: id,
-          receiverId: userId,
+    try {
+      return await this.prisma.friend.delete({
+        where: {
+          userOneId_userTwoId: {
+            userOneId: id,
+            userTwoId: userId,
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      throw new FriendRequestNotFoundException();
+    }
   }
 
   async cancel(userId: number, id: number) {
-    return await this.prisma.friendRequest.delete({
-      where: {
-        senderId_receiverId: {
-          senderId: userId,
-          receiverId: id,
+    try {
+      return await this.prisma.friend.delete({
+        where: {
+          userOneId_userTwoId: {
+            userOneId: userId,
+            userTwoId: id,
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      throw new FriendRequestNotFoundException();
+    }
   }
 
   isFriend(userOneId: number, userTwoId: number) {
@@ -102,10 +114,10 @@ export class FriendRequestService {
       where: {
         OR: [
           {
-            AND: [{ userId: userOneId, friendId: userTwoId }],
+            AND: [{ userOneId: userOneId, userTwoId: userTwoId, status: 2 }],
           },
           {
-            AND: [{ userId: userTwoId, friendId: userOneId }],
+            AND: [{ userOneId: userTwoId, userTwoId: userOneId, status: 2 }],
           },
         ],
       },
