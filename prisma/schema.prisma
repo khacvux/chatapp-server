@@ -24,9 +24,11 @@ model User {
   firstName String?
   lastName  String?
 
-  chat    Chat[]
-  UserOne Friend[] @relation("userone")
-  UserTwo Friend[] @relation("usertwo")
+  chat         Chat[]
+  UserOne      Friend[]       @relation("userone")
+  UserTwo      Friend[]       @relation("usertwo")
+  Groups       UsersOnGroup[]
+  CreatorGroup Group[]
 
   @@map("users")
 }
@@ -49,7 +51,7 @@ model Friend {
   createAt  DateTime @default(now()) @db.Timestamp(6)
 
   //STATUS
-  // 0 || NULL: DEFAULT - CANCEL - DELETE - PENDING
+  // 0 || NULL: DEFAULT - CANCEL - DELETE
   // 1: PENDING
   // 2: ACCEPT
   status Int
@@ -59,4 +61,34 @@ model Friend {
 
   @@id([userOneId, userTwoId])
   @@map("friends")
+}
+
+model Group {
+  id              Int            @id @default(autoincrement())
+  creatorId       Int
+  creator         User           @relation(fields: [creatorId], references: [id])
+  title           String?
+  messages        GroupMessage[]
+  lastMessageSent String?
+  lastMessageAt   DateTime?
+  avatar          String?
+  createAt        DateTime       @default(now()) @db.Timestamp(6)
+
+  Users UsersOnGroup[]
+}
+
+model UsersOnGroup {
+  group   Group @relation(fields: [groupId], references: [id])
+  groupId Int
+  user    User  @relation(fields: [userId], references: [id])
+  userId  Int
+
+  @@id([groupId, userId])
+}
+
+model GroupMessage {
+  id      Int    @id @default(autoincrement())
+  Group   Group? @relation(fields: [groupId], references: [id])
+  groupId Int?
+  message String
 }

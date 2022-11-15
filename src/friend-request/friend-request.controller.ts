@@ -28,7 +28,7 @@ export class FriendRequestController {
   }
 
   @HttpCode(HttpStatus.CREATED)
-  @Patch(Routes.CREATE_FRIENDS_REQUEST)
+  @Get(Routes.CREATE_FRIENDS_REQUEST)
   createFriendRequest(
     @GetUser('id') senderId: number,
     @Param('id', ParseIntPipe) receiverId: number,
@@ -37,7 +37,7 @@ export class FriendRequestController {
   }
 
   @HttpCode(HttpStatus.ACCEPTED)
-  @Patch(Routes.ACCEPT_FRIENDS_REQUEST)
+  @Get(Routes.ACCEPT_FRIENDS_REQUEST)
   async acceptFriendRequest(
     @GetUser('id') userId: number,
     @Param('id', ParseIntPipe) id: number,
@@ -53,7 +53,7 @@ export class FriendRequestController {
     return this.service.reject(userId, id);
   }
 
-  @Patch(Routes.CANCEL_FRIENDS_REQUEST)
+  @Delete(Routes.CANCEL_FRIENDS_REQUEST)
   async cancelFriendRequest(
     @GetUser('id') userId: number,
     @Param('id', ParseIntPipe) id: number,

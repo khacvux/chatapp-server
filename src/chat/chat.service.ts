@@ -6,15 +6,15 @@ import { GetChatDto } from './dto';
 export class ChatService {
   constructor(private prisma: PrismaService) {}
 
-  async getChat(dto: GetChatDto, userId: number) {
+  async getChat(receiverId: number, userId: number) {
     return this.prisma.chat.findMany({
       where: {
         OR: [
           {
-            AND: [{ from: userId }, { to: dto.receiverId }],
+            AND: [{ from: userId }, { to: receiverId }],
           },
           {
-            AND: [{ from: dto.receiverId }, { to: userId }],
+            AND: [{ from: receiverId }, { to: userId }],
           },
         ],
       },

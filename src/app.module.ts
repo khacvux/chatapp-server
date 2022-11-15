@@ -6,6 +6,7 @@ import { ChatModule } from './chat/chat.module';
 import { GatewayModule } from './gateway/gateway.module';
 import { FriendsModule } from './friends/friends.module';
 import { FriendRequestModule } from './friend-request/friend-request.module';
+import { GroupModule } from './group/group.module';
 
 
 @Module({
@@ -19,6 +20,7 @@ import { FriendRequestModule } from './friend-request/friend-request.module';
     GatewayModule,
     FriendsModule,
     FriendRequestModule,
+    GroupModule,
   ],
 })
 export class AppModule {}

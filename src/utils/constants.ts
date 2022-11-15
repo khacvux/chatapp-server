@@ -6,7 +6,7 @@ export enum Routes {
 
     // CHAT
     CHAT = 'chat',
-    GET_CHAT_LIST = 'list',
+    GET_CHAT_LIST = ':id/list',
 
     // FRIENDS
     FRIENDS = 'f',
@@ -21,6 +21,13 @@ export enum Routes {
     CANCEL_FRIENDS_REQUEST = ':id/cancel',
     REJECT_FRIENDS_REQUEST = ':id/reject',
 
+    //GROUP 
+    GROUP = 'g',
+    GET_GROUPS = '/list',
+    GET_GROUP = ':id',
+    CREATE_GROUP = 'create',
+    UPDATE_GROUP_OWNER = ':id/owner',
+    UPDATE_GROUP_DETAIL = ':id/details'
 }
 
 export enum Services {

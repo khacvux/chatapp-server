@@ -13,29 +13,32 @@ export class FriendRequestService {
   async getFriendRequests(userId: number) {
     const list = await this.prisma.friend.findMany({
       where: {
-        OR: [
-          {
-            AND: [{ userOneId: userId }, { status: 2 }],
+        userTwoId: userId,
+        status: 1,
+      },
+      select: {
+        UserOne: {
+          select: {
+            username: true,
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            avatar: true,
           },
-          {
-            AND: [{ userTwoId: userId }, { status: 2 }],
-          },
-        ],
+        },
       },
     });
 
     return list.map((item) => {
-      if (item.userOneId == userId) {
-        item['userId'] = item.userTwoId;
-        delete item.userOneId;
-        delete item.userTwoId;
-        return item;
-      } else {
-        item['userId'] = item.userOneId;
-        delete item.userOneId;
-        delete item.userTwoId;
-        return item;
-      }
+      item['id'] = item.UserOne.id;
+      item['username'] = item.UserOne.username;
+      item['email'] = item.UserOne.email;
+      item['firstName'] = item.UserOne.firstName;
+      item['lastName'] = item.UserOne.lastName;
+      item['avatar'] = item.UserOne.avatar;
+      delete item.UserOne
+      return item;
     });
   }
 
@@ -64,8 +67,6 @@ export class FriendRequestService {
       throw new ForbiddenException(
         'Cannot create friend request for yourself!',
       );
-    const isFriend = await this.isFriend(userId, id);
-    if (isFriend.length) throw new FriendRequestAcceptedException();
     return await this.prisma.friend.update({
       where: {
         userOneId_userTwoId: {
