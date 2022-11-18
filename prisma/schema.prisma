@@ -29,6 +29,7 @@ model User {
   UserTwo      Friend[]       @relation("usertwo")
   Groups       UsersOnGroup[]
   CreatorGroup Group[]
+  GroupMessage GroupMessage[]
 
   @@map("users")
 }
@@ -87,8 +88,12 @@ model UsersOnGroup {
 }
 
 model GroupMessage {
-  id      Int    @id @default(autoincrement())
-  Group   Group? @relation(fields: [groupId], references: [id])
-  groupId Int?
-  message String
+  id       Int      @id @default(autoincrement())
+  Group    Group?   @relation(fields: [groupId], references: [id])
+  groupId  Int?
+  from     Int
+  message  String
+  fromUser User?    @relation(fields: [from], references: [id])
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
 }

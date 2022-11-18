@@ -7,17 +7,21 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { Routes } from '../utils/constants';
+import { Routes } from '../../utils/constants';
 import { JwtGuard } from 'src/auth/guard';
 import { GetUser } from 'src/auth/decorator';
-import { GroupService } from './group.service';
-import { CreateGroupDto, TransferOwnerDto, UpdateGroupDetalDto } from './dtos';
+import { GroupService } from '../services/group.service';
+import { CreateGroupDto, TransferOwnerDto, UpdateGroupDetalDto } from '../dtos';
 import { User } from '@prisma/client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @UseGuards(JwtGuard)
 @Controller(Routes.GROUP)
 export class GroupController {
-  constructor(private service: GroupService) {}
+  constructor(
+    private service: GroupService,
+    private eventEmitter: EventEmitter2,
+  ) {}
 
   @Get(Routes.GET_GROUPS)
   getGroups(@GetUser('id') userId: number) {
@@ -30,8 +34,10 @@ export class GroupController {
   }
 
   @Post(Routes.CREATE_GROUP)
-  createGroup(@GetUser() user: User, @Body() payload: CreateGroupDto) {
-    return this.service.createGroup(user, payload);
+  async createGroup(@GetUser() user: User, @Body() payload: CreateGroupDto) {
+    const response = await this.service.createGroup(user, payload);
+    this.eventEmitter.emit('group.create', response)
+    return response
   }
 
   @Post(Routes.UPDATE_GROUP_OWNER)
@@ -49,5 +55,13 @@ export class GroupController {
     @Body() payload: UpdateGroupDetalDto,
   ) {
     return this.service.updateGroupDetails(groupId, payload);
+  }
+
+  @Get(Routes.GET_CHAT_LIST)
+  getGroupChatList(
+    @GetUser('id') userId: number,
+    @Param('id', ParseIntPipe) groupId: number,
+  ) {
+    return this.service.getGroupChatList();
   }
 }

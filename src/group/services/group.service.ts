@@ -1,7 +1,7 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateGroupDto, UpdateGroupDetalDto } from './dtos';
+import { CreateGroupDto, UpdateGroupDetalDto } from '../dtos';
 
 @Injectable()
 export class GroupService {
@@ -18,6 +18,7 @@ export class GroupService {
       },
     });
   }
+
   async getGroup(groupId: number) {
     return await this.prisma.group.findUnique({
       where: {
@@ -49,23 +50,60 @@ export class GroupService {
     });
   }
 
-  async createGroup(user: User, payload: CreateGroupDto) {
-    const data = payload.users.map((item) => ({
-      userId: item,
-    }));
-
-    return this.prisma.group.create({
-      data: {
-        creatorId: user.id,
-        title: payload.title,
-        avatar: payload.avatar,
-        Users: {
-          createMany: {
-            data,
-          },
-        },
+  async getGroupMessage(groupId: number) {
+    return await this.prisma.groupMessage.findMany({
+      where: {
+        groupId: groupId,
       },
     });
+  }
+
+  async createGroup(user: User, payload: CreateGroupDto) {
+    try {
+      const data = payload.users.map((item) => ({
+        userId: item,
+      }));
+
+      const response = await this.prisma.group.create({
+        data: {
+          creatorId: user.id,
+          title: payload.title,
+          avatar: payload.avatar,
+          Users: {
+            createMany: {
+              data: data,
+            },
+          },
+        },
+      });
+
+      return this.prisma.group.findUnique({
+        where: {
+          id: response.id,
+        },
+        select: {
+          creatorId: true,
+          title: true,
+          avatar: true,
+          Users: {
+            select: {
+              user: {
+                select: {
+                  username: true,
+                  id: true,
+                  email: true,
+                  avatar: true,
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    } catch {
+      throw new ForbiddenException();
+    }
   }
 
   async updateGroupOwner(userId: number, groupId: number, newOwnerId: number) {
@@ -107,4 +145,6 @@ export class GroupService {
       },
     });
   }
+
+  async getGroupChatList() {}
 }

@@ -27,7 +27,14 @@ export enum Routes {
     GET_GROUP = ':id',
     CREATE_GROUP = 'create',
     UPDATE_GROUP_OWNER = ':id/owner',
-    UPDATE_GROUP_DETAIL = ':id/details'
+    UPDATE_GROUP_DETAIL = ':id/details',
+
+    GROUP_RECIPIENTS = 'g/:id/recipients',
+    GROUP_RECIPIENT_ADD = 'add',
+    GROUP_RECIPIENT_LEAVE = 'leave',
+    GROUP_RECIPIENT_DELETE = 'delete',
+
+    GROUP_CHAT_LIST = '/:id'
 }
 
 export enum Services {

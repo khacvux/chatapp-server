@@ -16,6 +16,9 @@ import { IGatewaySessionManager } from './gateway.session';
 import { ConfigService } from '@nestjs/config';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { MessageCannotEmptyException } from './exceptions';
+import { Group } from '@prisma/client';
+import { CreateGroupMessageDto } from './dtos';
 
 @WebSocketGateway({
   cors: true,
@@ -34,12 +37,11 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   server: Server;
 
   handleConnection(socket: AuthenticatedSocket, ...args: any[]) {
-    console.log('Incoming Connection');
+    console.log(socket.user.userId + ` Connected`);
     this.sessions.setUserSocket(socket.user.userId, socket);
   }
 
   handleDisconnect(socket: AuthenticatedSocket) {
-    console.log('handleDisconnect');
     console.log(`${socket.user.username} disconnected.`);
     this.sessions.removeUserSocket(socket.user.userId);
   }
@@ -55,15 +57,17 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.sessions.getUserSocket(receiverId)?.user.socketId;
 
     try {
+      if (msg == '') throw new MessageCannotEmptyException();
       const message = await this.prisma.chat.create({
         data: {
           from: socket.user.userId,
           to: receiverId,
-          msg: msg || '',
+          msg: msg,
         },
       });
 
       if (receiverSocketId) {
+        console.log('send to ' + receiverSocketId);
         this.server.to(String(receiverSocketId)).emit('receiveMessage', {
           message,
         });
@@ -78,6 +82,37 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  // @SubscribeMessage('')
+  @OnEvent('group.create')
+  handleGroupCreate(payload: Group | any) {
+    payload?.Users.forEach((user: any) => {
+      const socket = this.sessions.getUserSocket(user.user.id);
+      socket && socket.emit('onGroupCreate', payload);
+    });
+  }
 
+  @SubscribeMessage('group.message.create')
+  async handleSendGroupMessage(
+    @MessageBody() body: CreateGroupMessageDto,
+    @ConnectedSocket() socket: AuthenticatedSocket,
+  ) {
+    try {
+      if (body.message == '') throw new MessageCannotEmptyException();
+      const response = await this.prisma.groupMessage.create({
+        data: {
+          groupId: body.groupId,
+          from: body.from,
+          message: body.message,
+        },
+      });
+      this.server.to(`group-${body.groupId}`).emit('onGroupMessage', response);
+      return;
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code == 'P2002') {
+          throw new ForbiddenException('Credientials token');
+        }
+      }
+      throw error;
+    }
+  }
 }
