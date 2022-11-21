@@ -36,9 +36,9 @@ export class ChatService {
                 if (a['id'] < b['id']) return -1;
                 return 0;
             }
-            return { status: true, chats: chats }
+            return chats
         } catch (error) {
-            return { status: false}
+            return {}
         }
     } 
 }

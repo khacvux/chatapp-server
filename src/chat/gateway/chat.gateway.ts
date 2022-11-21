@@ -14,6 +14,10 @@ import { AuthenticatedSocket } from 'src/utils/interfaces';
 import { IGatewaySessionManager } from 'src/gateway/gateway.session';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { OnEvent } from '@nestjs/event-emitter';
+import { Group } from '@prisma/client';
+import { CreateGroupMessageDto } from 'src/gateway/dtos';
+import { MessageCannotEmptyException } from 'src/gateway/exceptions';
 
 @WebSocketGateway({
     cors: true,
@@ -68,15 +72,49 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
         try {
             if (receiverSocketId) {
-                this.server.to(String(receiverSocketId)).emit('receiveMessage', {
+                this.server.to(String(receiverSocketId)).emit('receiveMessage', {message:{
                     title: `New message from ${senderUsername}`,
                     from: senderId,
                     to: receiverId,
                     msg: msg || '',
-                });
+                }});
             }
         } catch (error) {
             console.log(error);
+            throw error;
+        }
+    }
+
+    @OnEvent('group.create')
+    handleGroupCreate(payload: Group | any) {
+        payload?.Users.forEach((user: any) => {
+            const socket = this.sessions.getUserSocket(user.user.id);
+            socket && socket.emit('onGroupCreate', payload);
+        });
+    }
+
+    @SubscribeMessage('group.message.create')
+    async handleSendGroupMessage(
+        @MessageBody() body: CreateGroupMessageDto,
+        @ConnectedSocket() socket: AuthenticatedSocket,
+    ) {
+        try {
+            if (body.message == '') throw new MessageCannotEmptyException();
+            const response = await this.prisma.groupMessage.create({
+                data: {
+                    groupId: body.groupId,
+                    from: body.from,
+                    message: body.message,
+                },
+            });
+            this.server.to(`group-${body.groupId}`).emit('onGroupMessage', response);
+            return;
+        } catch (error) {
+            if (error instanceof PrismaClientKnownRequestError) {
+                if (error.code == 'P2002') {
+                    throw new ForbiddenException('Credientials token');
+                }
+            }
             throw error;
         }
     }
