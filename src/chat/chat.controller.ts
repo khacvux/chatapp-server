@@ -21,7 +21,7 @@ export class ChatController {
   @Get(Routes.GET_CHAT_LIST)
   signin(
     @Param('id', ParseIntPipe) receiverId: number,
-    @GetUser('userId') userId: number,
+    @GetUser('id') userId: number,
   ) {
     return this.chatService.getChat(receiverId, userId);
   }

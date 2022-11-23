@@ -5,10 +5,6 @@ export class CreateGroupMessageDto {
     @IsNotEmpty()
     groupId: number
 
-    @IsNumber()
-    @IsNotEmpty()
-    from: number
-
     @IsString()
     @IsNotEmpty()
     message: string

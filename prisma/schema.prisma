@@ -71,7 +71,7 @@ model Group {
   title           String?
   messages        GroupMessage[]
   lastMessageSent String?
-  lastMessageAt   DateTime?
+  lastMessageAt   DateTime?      @updatedAt
   avatar          String?
   createAt        DateTime       @default(now()) @db.Timestamp(6)
 

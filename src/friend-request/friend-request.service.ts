@@ -37,7 +37,7 @@ export class FriendRequestService {
       item['firstName'] = item.UserOne.firstName;
       item['lastName'] = item.UserOne.lastName;
       item['avatar'] = item.UserOne.avatar;
-      delete item.UserOne
+      delete item.UserOne;
       return item;
     });
   }
@@ -50,34 +50,75 @@ export class FriendRequestService {
 
     const isFriend = await this.isFriend(senderId, receiverId);
     if (isFriend.length) throw new FriendRequestException('');
+    try {
+      await this.prisma.friend.create({
+        data: {
+          userOneId: senderId,
+          userTwoId: receiverId,
+          status: 1,
+        },
+      });
 
-    const added = await this.prisma.friend.create({
-      data: {
-        userOneId: senderId,
-        userTwoId: receiverId,
-        status: 1,
-      },
-    });
-    if (!added) throw new FriendRequestException('friend_request exist');
-    return;
+      return this.getUser(senderId);
+    } catch (error) {
+      throw new FriendRequestException('friend_request exist');
+    }
   }
 
-  async accept(userId: number, id: number) {
-    if (userId == id)
+  async accept(userId: number, receiverId: number) {
+    if (userId == receiverId)
       throw new ForbiddenException(
         'Cannot create friend request for yourself!',
       );
-    return await this.prisma.friend.update({
-      where: {
-        userOneId_userTwoId: {
-          userOneId: id,
-          userTwoId: userId,
+    try {
+      const user = await this.prisma.friend.update({
+        where: {
+          userOneId_userTwoId: {
+            userOneId: receiverId,
+            userTwoId: userId,
+          },
         },
-      },
-      data: {
-        status: 2,
-      },
-    });
+        data: {
+          status: 2,
+        },
+        select: {
+          id: true,
+          UserOne: {
+            select: {
+              id: true,
+              avatar: true,
+              username: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+          UserTwo: {
+            select: {
+              id: true,
+              avatar: true,
+              username: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
+      });
+      if (user.UserOne.id == receiverId) {
+        user['info'] = user.UserTwo;
+        delete user.UserOne;
+        delete user.UserTwo;
+        return user;
+      } else {
+        user['info'] = user.UserOne;
+        delete user.UserOne;
+        delete user.UserTwo;
+        return user;
+      }
+    } catch (error) {
+      throw new ForbiddenException();
+    }
   }
 
   async reject(userId: number, id: number) {
@@ -121,6 +162,22 @@ export class FriendRequestService {
             AND: [{ userOneId: userTwoId, userTwoId: userOneId, status: 2 }],
           },
         ],
+      },
+    });
+  }
+
+  getUser(userId: number) {
+    return this.prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        avatar: true,
+        firstName: true,
+        lastName: true,
       },
     });
   }
