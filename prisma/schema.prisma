@@ -23,6 +23,7 @@ model User {
   avatar    String?
   firstName String?
   lastName  String?
+  peerId    String?
 
   chatFrom     Chat[]         @relation("userfrom")
   chatTo       Chat[]         @relation("userto")
@@ -73,7 +74,7 @@ model Group {
   title           String?
   messages        GroupMessage[]
   lastMessageSent String?
-  lastMessageAt   DateTime?
+  lastMessageAt   DateTime?      @updatedAt
   avatar          String?
   createAt        DateTime       @default(now()) @db.Timestamp(6)
 

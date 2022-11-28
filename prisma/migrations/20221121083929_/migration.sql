@@ -60,7 +60,10 @@ CREATE TABLE "UsersOnGroup" (
 CREATE TABLE "GroupMessage" (
     "id" SERIAL NOT NULL,
     "groupId" INTEGER,
+    "from" INTEGER NOT NULL,
     "message" TEXT NOT NULL,
+    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updateAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "GroupMessage_pkey" PRIMARY KEY ("id")
 );
@@ -91,3 +94,6 @@ ALTER TABLE "UsersOnGroup" ADD CONSTRAINT "UsersOnGroup_userId_fkey" FOREIGN KEY
 
 -- AddForeignKey
 ALTER TABLE "GroupMessage" ADD CONSTRAINT "GroupMessage_groupId_fkey" FOREIGN KEY ("groupId") REFERENCES "Group"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "GroupMessage" ADD CONSTRAINT "GroupMessage_from_fkey" FOREIGN KEY ("from") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

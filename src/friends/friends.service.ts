@@ -23,6 +23,7 @@ export class FriendService {
         UserOne: {
           select: {
             id: true,
+            avatar: true,
             username: true,
             email: true,
             firstName: true,

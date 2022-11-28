@@ -76,7 +76,7 @@ export class GroupService {
           },
         },
       });
-
+      
       return this.prisma.group.findUnique({
         where: {
           id: response.id,
@@ -138,6 +138,36 @@ export class GroupService {
     });
   }
 
+  async getGroupChatList(groupId: number) {
+    try {
+      return await this.prisma.groupMessage.findMany({
+        where: {
+          groupId: groupId,
+        },
+        select: {
+          id: true,
+          groupId: true,
+          from: true,
+          message: true,
+          createAt: true,
+          updateAt: true,
+          fromUser: {
+            select: {
+              id: true,
+              avatar: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              username: true,
+            },
+          },
+        },
+      });
+    } catch (error) {
+      throw new ForbiddenException(error);
+    }
+  }
+
   findUser(userId: number) {
     return this.prisma.user.findUnique({
       where: {
@@ -145,6 +175,4 @@ export class GroupService {
       },
     });
   }
-
-  async getGroupChatList() {}
 }

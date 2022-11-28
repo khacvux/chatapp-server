@@ -36,8 +36,8 @@ export class GroupController {
   @Post(Routes.CREATE_GROUP)
   async createGroup(@GetUser() user: User, @Body() payload: CreateGroupDto) {
     const response = await this.service.createGroup(user, payload);
-    this.eventEmitter.emit('group.create', response)
-    return response
+    this.eventEmitter.emit('group.create', response);
+    return response;
   }
 
   @Post(Routes.UPDATE_GROUP_OWNER)
@@ -58,10 +58,7 @@ export class GroupController {
   }
 
   @Get(Routes.GET_CHAT_LIST)
-  getGroupChatList(
-    @GetUser('id') userId: number,
-    @Param('id', ParseIntPipe) groupId: number,
-  ) {
-    return this.service.getGroupChatList();
+  getGroupChatList(@Param('id', ParseIntPipe) groupId: number) {
+    return this.service.getGroupChatList(groupId);
   }
 }

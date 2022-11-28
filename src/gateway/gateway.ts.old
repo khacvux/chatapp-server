@@ -18,7 +18,7 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { MessageCannotEmptyException } from './exceptions';
 import { Group } from '@prisma/client';
-import { CreateGroupMessageDto } from './dtos';
+import { CreateGroupMessageDto, GroupJoinDto } from './dtos';
 
 @WebSocketGateway({
   cors: true,
@@ -29,7 +29,6 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     @Inject(Services.GATEWAY_SESSION_MANAGER)
     readonly sessions: IGatewaySessionManager,
-    private config: ConfigService,
     private prisma: PrismaService,
   ) {}
 
@@ -44,6 +43,26 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleDisconnect(socket: AuthenticatedSocket) {
     console.log(`${socket.user.username} disconnected.`);
     this.sessions.removeUserSocket(socket.user.userId);
+  }
+
+  @SubscribeMessage(`onGroupJoin`)
+  onGroupJoin(
+    @MessageBody() data: GroupJoinDto,
+    @ConnectedSocket() client: AuthenticatedSocket,
+  ) {
+    data.groupIds.map((groupId) => {
+      client.join(`group-${groupId}`);
+    });
+  }
+
+  @SubscribeMessage(`onGroupLeave`)
+  onGroupLeave(
+    @MessageBody() data: GroupJoinDto,
+    @ConnectedSocket() client: AuthenticatedSocket,
+  ) {
+    data.groupIds.map((groupId) => {
+      client.leave(`group-${groupId}`);
+    });
   }
 
   @SubscribeMessage(`sendMessage`)
@@ -100,8 +119,16 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
       const response = await this.prisma.groupMessage.create({
         data: {
           groupId: body.groupId,
-          from: body.from,
+          from: socket.user.userId,
           message: body.message,
+        },
+      });
+      const update = await this.prisma.group.update({
+        where: {
+          id: body.groupId,
+        },
+        data: {
+          lastMessageSent: body.message,
         },
       });
       this.server.to(`group-${body.groupId}`).emit('onGroupMessage', response);
@@ -114,5 +141,23 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
       throw error;
     }
+  }
+
+  @OnEvent('friend.request.create')
+  async handleCreate({receiverId, response}) {
+    const receiverSocketId =
+    this.sessions.getUserSocket(receiverId)?.user.socketId;
+    return this.server.to(String(receiverSocketId)).emit('notify.friend.request', {
+      response
+    })
+  }
+
+  @OnEvent('friend.request.accept')
+  async handleAccept({receiverId, response}) {
+    const receiverSocketId =
+    this.sessions.getUserSocket(receiverId)?.user.socketId;
+    return this.server.to(String(receiverSocketId)).emit('notify.friend.accept', {
+      response
+    })
   }
 }
