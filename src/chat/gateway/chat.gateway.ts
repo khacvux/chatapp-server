@@ -103,7 +103,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             const response = await this.prisma.groupMessage.create({
                 data: {
                     groupId: body.groupId,
-                    from: body.from,
+                    from: socket.user.id,
                     message: body.message,
                 },
             });

@@ -12,8 +12,8 @@ export enum Routes {
 
   // CHAT
   CHAT = 'chat',
-    GET_CHATS = 'getchats',
-    GET_USERS = 'getusers',
+  GET_CHATS = 'getchats',
+  GET_USERS = 'getusers',
   GET_CHAT_LIST = ':id/list',
 
   // FRIENDS
