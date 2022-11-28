@@ -23,6 +23,7 @@ model User {
   avatar    String?
   firstName String?
   lastName  String?
+  peerId    String?
 
   chat         Chat[]
   UserOne      Friend[]       @relation("userone")

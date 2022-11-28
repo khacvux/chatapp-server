@@ -8,6 +8,7 @@ import { FriendsModule } from './friends/friends.module';
 import { FriendRequestModule } from './friend-request/friend-request.module';
 import { GroupModule } from './group/group.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     FriendsModule,
     FriendRequestModule,
     GroupModule,
+    UserModule,
   ],
 })
 export class AppModule {}

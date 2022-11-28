@@ -17,18 +17,24 @@ export class WebsocketAdapter extends IoAdapter {
         return next(new Error('Not Authenticated. No token were sent'));
       }
 
-      const decode_token: IDecodeToken = this.jwtService.verify(String(token), {
-        secret: this.config.get('JWT_SECRET'),
-      });
+      try {
+        const decode_token: IDecodeToken = this.jwtService.verify(
+          String(token),
+          {
+            secret: this.config.get('JWT_SECRET'),
+          },
+        );
 
-      if (!decode_token?.userId) return next(new Error('Error signing token'));
+        if (!decode_token?.userId)
+          return next(new Error('Error signing token'));
 
-      socket.user = {
-        ...decode_token,
-        socketId: socket.id,
-      };
+        socket.user = {
+          ...decode_token,
+          socketId: socket.id,
+        };
 
-      next();
+        next();
+      } catch (error) {}
     });
     return server;
   }
