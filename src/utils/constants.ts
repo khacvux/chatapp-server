@@ -54,6 +54,10 @@ export enum User {
     CREATEAT = 'createAt',
     UPDATEAT = 'updateAt',
 }
+export enum Chat {
+    SEND_MESSAGE = "sendMessage",
+    RECEIVE_MESSAGE = "receiveMessage"
+}
 
 export enum Services {
     GATEWAY_SESSION_MANAGER = 'GATEWAY_SESSION_MANAGER'

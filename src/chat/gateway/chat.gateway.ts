@@ -9,7 +9,7 @@ import {
     OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server } from 'socket.io';
-import { Services } from 'src/utils/constants';
+import { Chat, Services } from 'src/utils/constants';
 import { AuthenticatedSocket } from 'src/utils/interfaces';
 import { IGatewaySessionManager } from 'src/gateway/gateway.session';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
@@ -44,7 +44,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.sessions.removeUserSocket(socket.user.id);
     }
 
-    @SubscribeMessage(`sendMessage`)
+    @SubscribeMessage(Chat.SEND_MESSAGE)
     async onSendMessage(
         @MessageBody() body: any,
         @ConnectedSocket() socket: AuthenticatedSocket,
@@ -72,7 +72,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
         try {
             if (receiverSocketId) {
-                this.server.to(String(receiverSocketId)).emit('receiveMessage', {message:{
+                this.server.to(String(receiverSocketId)).emit(Chat.RECEIVE_MESSAGE, {message:{
                     title: `New message from ${senderUsername}`,
                     from: senderId,
                     to: receiverId,

@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { Chat } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { GetChatDto } from './dto';
+import { GetChatDto, IChatReturn } from './dto';
 
 @Injectable()
 export class ChatService {
     constructor(private prisma: PrismaService) { }
 
-    async getChat(dto: GetChatDto, userId: number) {
+    async getChat(dto: GetChatDto, userId: number) : Promise<IChatReturn> {
         try {
             const chats = (await this.prisma.chat.findMany({
                 orderBy:{
@@ -36,9 +36,9 @@ export class ChatService {
                 if (a['id'] < b['id']) return -1;
                 return 0;
             }
-            return chats
+            return {statusCode: 200, chats:chats}
         } catch (error) {
-            return {}
+            return {statusCode: 400, message:"Error for load message"}
         }
     } 
 }

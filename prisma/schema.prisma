@@ -24,7 +24,8 @@ model User {
   firstName String?
   lastName  String?
 
-  chat         Chat[]
+  chatFrom     Chat[]         @relation("userfrom")
+  chatTo       Chat[]         @relation("userto")
   UserOne      Friend[]       @relation("userone")
   UserTwo      Friend[]       @relation("usertwo")
   Groups       UsersOnGroup[]
@@ -40,13 +41,14 @@ model Chat {
   from      Int
   to        Int
   createdAt DateTime @default(now()) @db.Timestamp(6)
-  user      User     @relation(fields: [from], references: [id])
+  userFrom  User     @relation("userfrom", fields: [from], references: [id], map: "userfrom_fkey")
+  userTo    User     @relation("userto", fields: [to], references: [id], map: "userto_fkey")
 
   @@map("chats")
 }
 
 model Friend {
-  id        Int      @unique(map: "id_UNIQUE") @default(autoincrement()) 
+  id        Int      @unique(map: "id_UNIQUE") @default(autoincrement())
   userOneId Int
   userTwoId Int
   createAt  DateTime @default(now()) @db.Timestamp(6)
@@ -97,7 +99,8 @@ model GroupMessage {
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
 }
+
 model Session {
-  id        Int      @id @default(autoincrement())
-  json      String 
+  id   Int    @id @default(autoincrement())
+  json String
 }
