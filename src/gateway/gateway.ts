@@ -18,7 +18,13 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { MessageCannotEmptyException } from './exceptions';
 import { Group } from '@prisma/client';
-import { CreateGroupMessageDto, GroupJoinDto } from './dtos';
+import {
+  CallAcceptedPayload,
+  CallHangUpPayload,
+  CreateCallDto,
+  CreateGroupMessageDto,
+  GroupJoinDto,
+} from './dtos';
 
 @WebSocketGateway({
   cors: true,
@@ -42,6 +48,7 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   handleDisconnect(socket: AuthenticatedSocket) {
     console.log(`${socket.user.username} disconnected.`);
+    socket._cleanup;
     this.sessions.removeUserSocket(socket.user.userId);
   }
 
@@ -52,16 +59,6 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     data.groupIds.map((groupId) => {
       client.join(`group-${groupId}`);
-    });
-  }
-
-  @SubscribeMessage(`onGroupLeave`)
-  onGroupLeave(
-    @MessageBody() data: GroupJoinDto,
-    @ConnectedSocket() client: AuthenticatedSocket,
-  ) {
-    data.groupIds.map((groupId) => {
-      client.leave(`group-${groupId}`);
     });
   }
 
@@ -144,20 +141,80 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @OnEvent('friend.request.create')
-  async handleCreate({receiverId, response}) {
+  async handleCreate({ receiverId, response }) {
     const receiverSocketId =
-    this.sessions.getUserSocket(receiverId)?.user.socketId;
-    return this.server.to(String(receiverSocketId)).emit('notify.friend.request', {
-      response
-    })
+      this.sessions.getUserSocket(receiverId)?.user.socketId;
+    return this.server
+      .to(String(receiverSocketId))
+      .emit('notify.friend.request', {
+        response,
+      });
   }
 
   @OnEvent('friend.request.accept')
-  async handleAccept({receiverId, response}) {
+  async handleAccept({ receiverId, response }) {
     const receiverSocketId =
-    this.sessions.getUserSocket(receiverId)?.user.socketId;
-    return this.server.to(String(receiverSocketId)).emit('notify.friend.accept', {
-      response
-    })
+      this.sessions.getUserSocket(receiverId)?.user.socketId;
+    return this.server
+      .to(String(receiverSocketId))
+      .emit('notify.friend.accept', {
+        response,
+      });
+  }
+
+  @SubscribeMessage('onVideoCallInitiate')
+  async handleVideoCall(
+    @MessageBody() data: CreateCallDto,
+    @ConnectedSocket() socket: AuthenticatedSocket,
+  ) {
+    const caller = socket.user;
+    const receiverSocket = this.sessions.getUserSocket(data.recipientId);
+    if (!receiverSocket) socket.emit('onUserUnavailable');
+    else {
+      await this.prisma.chat.create({
+        data: {
+          from: caller.userId,
+          to: data.recipientId,
+          msg: 'Video call',
+          type: 2,
+        },
+      });
+
+      const callerInfo = await this.prisma.user.findUnique({
+        where: {
+          id: caller.userId,
+        },
+        select: {
+          id: true,
+          username: true,
+          firstName: true,
+          lastName: true,
+          avatar: true,
+        },
+      });
+      receiverSocket.emit('onVideoCall', { callerInfo });
+    }
+  }
+
+  @SubscribeMessage('videoCallAccepted')
+  async handleVideoCallAccepted(@MessageBody() data: CallAcceptedPayload) {
+    console.log('accept');
+    const callerSocket = this.sessions.getUserSocket(data.callerId);
+    callerSocket.emit('onVideoCallAccept', data);
+  }
+
+  @SubscribeMessage('videoCallRejected')
+  async handleVideoCallRejected(@MessageBody() data: CallAcceptedPayload) {
+    const callerSocket = this.sessions.getUserSocket(data.callerId);
+    callerSocket.emit('onVideoCallRejected');
+  }
+
+  @SubscribeMessage('videoCallHangUp')
+  async handleVideoCallHangUp(
+    @MessageBody() { receiverId }: CallHangUpPayload,
+  ) {
+    console.log('videoCallHangUp');
+    const receiverSocket = this.sessions.getUserSocket(receiverId);
+    receiverSocket.emit('onVideoCallHangUp');
   }
 }

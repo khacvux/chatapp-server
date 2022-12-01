@@ -25,7 +25,8 @@ model User {
   lastName  String?
   peerId    String?
 
-  chat         Chat[]
+  chatFrom     Chat[]         @relation("userfrom")
+  chatTo       Chat[]         @relation("userto")
   UserOne      Friend[]       @relation("userone")
   UserTwo      Friend[]       @relation("usertwo")
   Groups       UsersOnGroup[]
@@ -41,7 +42,15 @@ model Chat {
   from      Int
   to        Int
   createdAt DateTime @default(now()) @db.Timestamp(6)
-  user      User     @relation(fields: [from], references: [id])
+  type      Int?
+  // TYPE
+  // 0: MESSAGE
+  // 1: IMAGE
+  // 2: VIDEO CALL
+
+
+  userFrom  User     @relation("userfrom", fields: [from], references: [id], map: "userfrom_fkey")
+  userTo    User     @relation("userto", fields: [to], references: [id], map: "userto_fkey")
 
   @@map("chats")
 }

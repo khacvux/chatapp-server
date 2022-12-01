@@ -9,6 +9,7 @@ import { FriendRequestModule } from './friend-request/friend-request.module';
 import { GroupModule } from './group/group.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { UserModule } from './user/user.module';
+import { ImageStorageModule } from './image-storage/image-storage.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { UserModule } from './user/user.module';
     FriendRequestModule,
     GroupModule,
     UserModule,
+    ImageStorageModule,
   ],
 })
 export class AppModule {}
