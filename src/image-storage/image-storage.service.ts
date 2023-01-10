@@ -23,11 +23,10 @@ export class ImageStorageService {
       return new Promise((resolve) =>
         cloudinary.uploader.upload(
           file.path,
-          (error: Error, res: { url: string; public_id: string }) => {
-            console.log('res:', res);
+          (error: Error, res: { secure_url: string; public_id: string }) => {
             return resolve({
               success: error ? false : true,
-              url: res?.url,
+              url: res?.secure_url,
               error,
               publicId: res?.public_id,
             });

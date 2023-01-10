@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseIntPipe,
   Post,
@@ -50,6 +52,7 @@ export class GroupController {
   }
 
   @Post(Routes.UPDATE_GROUP_DETAIL)
+  @HttpCode(HttpStatus.CREATED)
   updateGroupDetails(
     @Param('id', ParseIntPipe) groupId: number,
     @Body() payload: UpdateGroupDetalDto,

@@ -9,11 +9,10 @@ import {
   ConnectedSocket,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
+import { Server } from 'socket.io';
 import { Services } from '../utils/constants';
 import { AuthenticatedSocket } from '../utils/interfaces';
 import { IGatewaySessionManager } from './gateway.session';
-import { ConfigService } from '@nestjs/config';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { MessageCannotEmptyException } from './exceptions';
@@ -41,7 +40,7 @@ export class Gateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
-  handleConnection(socket: AuthenticatedSocket, ...args: any[]) {
+  handleConnection(socket: AuthenticatedSocket) {
     console.log(socket.user.userId + ` Connected`);
     this.sessions.setUserSocket(socket.user.userId, socket);
   }

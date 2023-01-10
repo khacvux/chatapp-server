@@ -7,6 +7,7 @@ CREATE TABLE "users" (
     "hash" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "avatar" TEXT,
+    "avatarId" TEXT,
     "firstName" TEXT,
     "lastName" TEXT,
 
@@ -20,6 +21,7 @@ CREATE TABLE "chats" (
     "from" INTEGER NOT NULL,
     "to" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "type" INTEGER,
 
     CONSTRAINT "chats_pkey" PRIMARY KEY ("id")
 );
@@ -75,7 +77,10 @@ CREATE UNIQUE INDEX "users_username_key" ON "users"("username");
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 -- AddForeignKey
-ALTER TABLE "chats" ADD CONSTRAINT "chats_from_fkey" FOREIGN KEY ("from") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "chats" ADD CONSTRAINT "userfrom_fkey" FOREIGN KEY ("from") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "chats" ADD CONSTRAINT "userto_fkey" FOREIGN KEY ("to") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "friends" ADD CONSTRAINT "userone_fkey" FOREIGN KEY ("userOneId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

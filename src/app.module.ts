@@ -10,13 +10,15 @@ import { GroupModule } from './group/group.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { UserModule } from './user/user.module';
 import { ImageStorageModule } from './image-storage/image-storage.module';
+import { NestjsFormDataModule } from 'nestjs-form-data';
 
 @Module({
   imports: [
+    EventEmitterModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    EventEmitterModule.forRoot(),
+    NestjsFormDataModule,
     PrismaModule,
     AuthModule,
     ChatModule,

@@ -6,9 +6,8 @@ export enum Routes {
 
   //USER
   USER = 'user',
-  GET_PEERID = ':id/peerid',
-  UPDATE_PEERID = 'peerid/update',
-  DELETE_PEERID = 'peerid/delete',
+  UPDATE_AVATAR = '/avatar/update',
+  UPDATE_INFO = '/info/update',
 
   // CHAT
   CHAT = 'chat',
